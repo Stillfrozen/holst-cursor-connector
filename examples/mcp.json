@@ -1,0 +1,11 @@
+{
+  "holst": {
+    "command": "node",
+    "args": ["/path/to/holst-cursor-connector/dist/stdio-entry.js"],
+    "env": {
+      "HOLST_STORAGE_STATE": "~/.holst/auth.json",
+      "HOLST_CACHE_DIR": "~/.cache/holst-boards",
+      "HOLST_PARSER_ROOT": "/path/to/holst-cursor-connector/python"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "holst-cursor-connector",
+  "version": "1.0.0",
+  "description": "Local MCP server for Holst boards — backup download + parse",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start:stdio": "node dist/stdio-entry.js",
+    "dev:stdio": "tsx src/stdio-entry.ts",
+    "holst:install": "tsx scripts/install.mts",
+    "holst:login": "tsx scripts/holst-login.mts",
+    "holst:fetch": "tsx scripts/holst-fetch.mts",
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "bash scripts/e2e-parse.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "playwright": "^1.52.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stillfrozen/holst-cursor-connector.git"
+  },
+  "license": "MIT"
+}

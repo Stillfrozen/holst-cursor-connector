@@ -1,0 +1,8 @@
+*.holst
+.auth/
+dist/
+node_modules/
+.cache/
+**/.holst/
+**/*.auth.json
+examples/mcp-snippet.json
