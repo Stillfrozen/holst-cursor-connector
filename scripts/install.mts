@@ -1,5 +1,5 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -23,9 +23,17 @@ if (!skipBuild) {
   console.log("\n[2/5] npm run build");
   run("npm", ["run", "build"]);
   console.log("\n[3/5] playwright chromium");
+  process.env.PLAYWRIGHT_BROWSERS_PATH = defaultPlaywrightBrowsersPath();
   run("npx", ["playwright", "install", "chromium"]);
 } else {
   console.log("\n[skip] npm install / build / playwright (--skip-build)");
+}
+
+function defaultPlaywrightBrowsersPath(): string {
+  const home = homedir();
+  return platform() === "darwin"
+    ? join(home, "Library", "Caches", "ms-playwright")
+    : join(home, ".cache", "ms-playwright");
 }
 
 const holstDir = join(homedir(), ".holst");
@@ -56,6 +64,7 @@ const mcpEntry = {
       HOLST_STORAGE_STATE: join(holstDir, "auth.json"),
       HOLST_CACHE_DIR: cacheDir,
       HOLST_PARSER_ROOT: join(repoRoot, "python"),
+      PLAYWRIGHT_BROWSERS_PATH: defaultPlaywrightBrowsersPath(),
     },
   },
 };

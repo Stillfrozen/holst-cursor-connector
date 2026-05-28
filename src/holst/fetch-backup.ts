@@ -2,6 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 import { chromium, type Download, type Page } from "playwright";
 import { ensureParentDir } from "./config.js";
+import { applyPlaywrightEnv, assertPlaywrightReady } from "./playwright-env.js";
 
 export interface FetchBackupOptions {
   boardId: string;
@@ -102,6 +103,9 @@ export async function fetchBoardBackup(options: FetchBackupOptions): Promise<{
       `Missing Holst auth storage at ${options.storageStatePath}. Run: npm run holst:login`
     );
   }
+
+  applyPlaywrightEnv();
+  await assertPlaywrightReady();
 
   const browser = await chromium.launch({
     headless: options.headless ?? true,

@@ -1,3 +1,11 @@
+---
+title: "holst-cursor-connector"
+tags:
+  - проект/workspace
+  - подпроект/tools
+  - тип/guide
+  - область/meta
+---
 # holst-cursor-connector
 
 Локальный **MCP-сервер** и **Python-парсер** для досок [Holst](https://holst.so): скачивание `.holst` бэкапов через Playwright, разбор в markdown для LLM (фреймы, стикеры, PBR-карточки).

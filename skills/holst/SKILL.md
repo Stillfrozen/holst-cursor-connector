@@ -79,7 +79,7 @@ Reload MCP after changes.
 | Tool | Purpose |
 |------|---------|
 | `holst_login_status` | Check auth file exists |
-| `holst_sync_board` | Download `.holst` if stale + parse to markdown cache |
+| `holst_sync_board` | Parse cached backup (default `skip_download=true`, MCP-safe) |
 | `holst_list_frames` | Frame names, slugs, child counts |
 | `holst_get_frame` | Markdown for one frame (by label/slug/id) |
 | `holst_parse_backup` | Parse local `.holst` without download |
@@ -92,10 +92,11 @@ Default cache: `~/.cache/holst-boards/{boardId}/parsed/`
 
 1. **`holst_login_status`** — if missing auth, tell user to run `npm run holst:login`.
 2. Resolve **board** from user message (URL, UUID, alias). If ambiguous, ask once.
-3. **`holst_sync_board`** with `board` — do **not** set `force: true` unless user asks to refresh.
-4. If user named a **frame** → **`holst_get_frame`** with `frame` query (substring match works).
-5. If frame unclear → **`holst_list_frames`**, pick best match, confirm if several.
-6. Use returned **markdown** (+ cached assets paths) for analysis, Kaiten cards, PRD, etc.
+3. **`holst_sync_board`** with `board` — по умолчанию только парсинг кэша (`skip_download=true`). **`force: true`** = перепарсить, не качать Holst в MCP.
+4. Свежий backup → CLI: `npm run holst:fetch -- "PBR B2C"` в `holst-cursor-connector`.
+5. If user named a **frame** → **`holst_get_frame`** with `frame` query (substring match works).
+6. If frame unclear → **`holst_list_frames`**, pick best match, confirm if several.
+7. Use returned **markdown** (+ cached assets paths) for analysis, Kaiten cards, PRD, etc.
 
 ### Local backup already on disk
 
@@ -214,8 +215,17 @@ PYTHONPATH=python python3 -m holst_parser.cli get-frame ~/.cache/holst-boards/{i
 
 ---
 
+## MCP troubleshooting
+
+| Симптом | Fix |
+|---------|-----|
+| `Connection closed` / `Not connected` | Не качать доску через MCP Playwright; `holst:fetch` в CLI. Проверить `PLAYWRIGHT_BROWSERS_PATH` в `mcp.json` → `npm run holst:install -- --configure-mcp` |
+| После правок connector | **Reload MCP** в Cursor (Settings → MCP) |
+
+Проверка: `holst_login_status` → `playwright.launchOk: true`.
+
 ## Notes
 
-- Large boards: download may take several minutes; cache TTL default 60 min.
+- Large boards: download only via **CLI** `holst:fetch`, not MCP.
 - Parsed text comes from Holst Slate `jsonState` (stickers, shapes, simple-text).
 - Images are referenced as relative `assets/` paths in frame markdown, not inlined.

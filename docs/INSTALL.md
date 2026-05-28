@@ -1,3 +1,11 @@
+---
+title: "Установка holst-cursor-connector"
+tags:
+  - проект/workspace
+  - подпроект/tools
+  - тип/guide
+  - область/meta
+---
 # Установка holst-cursor-connector
 
 Пошаговая настройка MCP + skill для Cursor на macOS / Linux.
