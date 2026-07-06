@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { existsSync } from "node:fs";
+import { isAbsolute, relative, resolve } from "node:path";
 import { z } from "zod";
 import { getBoardPaths, needsParse, shouldDownloadBackup } from "../../cache.js";
 import { getHolstConfig } from "../../holst/config.js";
@@ -18,6 +19,11 @@ import { playwrightStatus } from "../../holst/playwright-env.js";
 
 export function registerHolstTools(server: McpServer): void {
   const config = getHolstConfig();
+
+  function isInsideCache(path: string): boolean {
+    const rel = relative(resolve(config.cacheDir), resolve(path));
+    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  }
 
   server.registerTool(
     "holst_login_status",
@@ -57,46 +63,54 @@ export function registerHolstTools(server: McpServer): void {
     },
     async ({ backup_path, board_id, output_dir }) =>
       safeTool(async () => {
-      let resolvedBoardId = board_id;
-      if (!resolvedBoardId) {
-        try {
-          resolvedBoardId = resolveBoard(backup_path, config.aliasesPath).boardId;
-        } catch {
-          resolvedBoardId = backup_path
-            .split(/[\\/]/)
-            .pop()
-            ?.replace(/\.holst$/i, "")
-            .trim() || "board";
-        }
-      }
-
-      const paths = output_dir
-        ? {
-            ...getBoardPaths(config.cacheDir, resolvedBoardId),
-            parsedDir: output_dir,
-            indexPath: `${output_dir}/index.json`,
-            summaryPath: `${output_dir}/board-summary.md`,
+        let resolvedBoardId = board_id;
+        if (!resolvedBoardId) {
+          try {
+            resolvedBoardId = resolveBoard(backup_path, config.aliasesPath).boardId;
+          } catch {
+            resolvedBoardId =
+              backup_path
+                .split(/[\\/]/)
+                .pop()
+                ?.replace(/\.holst$/i, "")
+                .trim() || "board";
           }
-        : getBoardPaths(config.cacheDir, resolvedBoardId);
+        }
 
-      const result = await parseBackupFile(
-        config,
-        backup_path,
-        paths.parsedDir,
-        resolvedBoardId
-      );
-      const frames = await listFrames(config, paths.parsedDir);
-      return textResult({
-        ...result,
-        frameCount: frames.length,
-        frames: frames.map((f) => ({
-          id: f.id,
-          labelText: f.labelText,
-          slug: f.slug,
-          childCount: f.childCount,
-        })),
-      });
-    })
+        if (output_dir && !isInsideCache(output_dir)) {
+          return errorResult("output_dir must be inside HOLST_CACHE_DIR", {
+            output_dir,
+            cacheDir: config.cacheDir,
+          });
+        }
+
+        const paths = output_dir
+          ? {
+              ...getBoardPaths(config.cacheDir, resolvedBoardId),
+              parsedDir: output_dir,
+              indexPath: `${output_dir}/index.json`,
+              summaryPath: `${output_dir}/board-summary.md`,
+            }
+          : getBoardPaths(config.cacheDir, resolvedBoardId);
+
+        const result = await parseBackupFile(
+          config,
+          backup_path,
+          paths.parsedDir,
+          resolvedBoardId
+        );
+        const frames = await listFrames(config, paths.parsedDir);
+        return textResult({
+          ...result,
+          frameCount: frames.length,
+          frames: frames.map((f) => ({
+            id: f.id,
+            labelText: f.labelText,
+            slug: f.slug,
+            childCount: f.childCount,
+          })),
+        });
+      })
   );
 
   server.registerTool(
@@ -132,70 +146,68 @@ export function registerHolstTools(server: McpServer): void {
     },
     async ({ board, force = false, ttl_minutes, headless, skip_download = true }) =>
       safeTool(async () => {
-      const resolved = resolveBoard(board, config.aliasesPath);
-      const paths = getBoardPaths(config.cacheDir, resolved.boardId);
-      const ttl = ttl_minutes ?? config.defaultTtlMinutes;
+        const resolved = resolveBoard(board, config.aliasesPath);
+        const paths = getBoardPaths(config.cacheDir, resolved.boardId);
+        const ttl = ttl_minutes ?? config.defaultTtlMinutes;
 
-      let downloaded = false;
-      let downloadedAt: string | null = null;
-      // force=true with default skip_download=true → re-parse only (safe for MCP).
-      // Playwright download only when skip_download=false explicitly.
-      const needsDownload =
-        !skip_download && shouldDownloadBackup(paths.backupPath, force, ttl);
+        let downloaded = false;
+        let downloadedAt: string | null = null;
+        const needsDownload =
+          !skip_download && shouldDownloadBackup(paths.backupPath, force, ttl);
 
-      if (!existsSync(paths.backupPath) && skip_download) {
-        return errorResult(
-          "No cached backup and skip_download=true (MCP-safe mode). Refresh backup via CLI, then sync again:\n" +
-            `  cd holst-cursor-connector && npm run holst:fetch -- \"${resolved.alias ?? board}\"`,
-          { backupPath: paths.backupPath, force, ttlMinutes: ttl, skip_download }
-        );
-      }
+        if (!existsSync(paths.backupPath) && skip_download) {
+          return errorResult(
+            "No cached backup and skip_download=true (MCP-safe mode). Refresh backup via CLI, then sync again:\n" +
+              `  cd holst-cursor-connector && npm run holst:fetch -- \"${resolved.alias ?? board}\"`,
+            { backupPath: paths.backupPath, force, ttlMinutes: ttl, skip_download }
+          );
+        }
 
-      if (needsDownload) {
-        const fetchResult = await fetchBoardBackup({
-          boardId: resolved.boardId,
-          boardUrl: `${config.holstBaseUrl}/board/${resolved.boardId}`,
-          storageStatePath: config.storageStatePath,
-          backupPath: paths.backupPath,
-          downloadTimeoutMs: config.downloadTimeoutMs,
-          headless,
+        if (needsDownload) {
+          const fetchResult = await fetchBoardBackup({
+            boardId: resolved.boardId,
+            boardUrl: `${config.holstBaseUrl}/board/${resolved.boardId}`,
+            storageStatePath: config.storageStatePath,
+            backupPath: paths.backupPath,
+            downloadTimeoutMs: config.downloadTimeoutMs,
+            headless,
+          });
+          downloaded = true;
+          downloadedAt = fetchResult.downloadedAt;
+        }
+
+        let parsed = false;
+        let parseResult = null;
+        if (needsParse(paths.indexPath, paths.backupPath, force || downloaded)) {
+          parseResult = await parseBackupFile(
+            config,
+            paths.backupPath,
+            paths.parsedDir,
+            resolved.boardId
+          );
+          parsed = true;
+        }
+
+        const frames = await listFrames(config, paths.parsedDir);
+        return textResult({
+          board: resolved,
+          downloaded,
+          downloadedAt,
+          parsed,
+          paths,
+          parseResult,
+          frameCount: frames.length,
+          frames: frames.map((f) => ({
+            id: f.id,
+            labelText: f.labelText,
+            slug: f.slug,
+            childCount: f.childCount,
+          })),
+          mcpHint: skip_download
+            ? "MCP mode: backup refresh via `npm run holst:fetch -- \"<board>\"` in holst-cursor-connector, then holst_sync_board(force=true)."
+            : "Playwright download in MCP may time out on large boards; prefer CLI holst:fetch if connection drops.",
         });
-        downloaded = true;
-        downloadedAt = fetchResult.downloadedAt;
-      }
-
-      let parsed = false;
-      let parseResult = null;
-      if (needsParse(paths.indexPath, paths.backupPath, force || downloaded)) {
-        parseResult = await parseBackupFile(
-          config,
-          paths.backupPath,
-          paths.parsedDir,
-          resolved.boardId
-        );
-        parsed = true;
-      }
-
-      const frames = await listFrames(config, paths.parsedDir);
-      return textResult({
-        board: resolved,
-        downloaded,
-        downloadedAt,
-        parsed,
-        paths,
-        parseResult,
-        frameCount: frames.length,
-        frames: frames.map((f) => ({
-          id: f.id,
-          labelText: f.labelText,
-          slug: f.slug,
-          childCount: f.childCount,
-        })),
-        mcpHint: skip_download
-          ? "MCP mode: backup refresh via `npm run holst:fetch -- \"<board>\"` in holst-cursor-connector, then holst_sync_board(force=true)."
-          : "Playwright download in MCP may time out on large boards; prefer CLI holst:fetch if connection drops.",
-      });
-    })
+      })
   );
 
   server.registerTool(

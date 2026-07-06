@@ -65,7 +65,9 @@ export function ensureParentDir(path: string): void {
 
 export function readJsonFile<T>(path: string): T | null {
   if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, "utf8")) as T;
+  const raw = readFileSync(path, "utf8").trim();
+  if (!raw) return null;
+  return JSON.parse(raw) as T;
 }
 
 export function fileAgeMinutes(path: string): number | null {
