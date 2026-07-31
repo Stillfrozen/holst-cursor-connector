@@ -1,11 +1,11 @@
 ---
-name: holst
-description: >-
-  Work with Holst whiteboards via holst-cursor-connector MCP — sync board backup,
-  list frames, read frame markdown for LLM analysis. Use when the user mentions
-  Holst, app.holst.so boards, moodboards, or asks to inspect a frame on a board.
+title: "Holst boards (MCP + parsed backups)"
+tags:
+  - проект/workspace
+  - подпроект/tools
+  - тип/guide
+  - область/meta
 ---
-
 # Holst boards (MCP + parsed backups)
 
 ## When to use
@@ -44,7 +44,7 @@ npm run holst:login
 
 ```json
 {
-  "Example board": "00000000-0000-4000-8000-000000000001"
+  "Example board": "xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"
 }
 ```
 
