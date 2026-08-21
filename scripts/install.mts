@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -43,18 +43,29 @@ mkdirSync(cacheDir, { recursive: true });
 
 const boardsPath = join(holstDir, "boards.json");
 if (!existsSync(boardsPath)) {
-  copyFileSync(join(repoRoot, "examples", "boards.json"), boardsPath);
-  console.log(`\n[4/5] Created ${boardsPath} from examples/boards.json`);
+  writeFileSync(
+    boardsPath,
+    `${JSON.stringify({ "Example board": "00000000-0000-4000-8000-000000000001" }, null, 2)}\n`,
+    "utf8"
+  );
+  console.log(
+    `\n[4/5] Created ${boardsPath} with a placeholder UUID. Replace it with your board id from app.holst.so/board/{uuid}.`
+  );
 } else {
   console.log(`\n[4/5] boards.json already exists: ${boardsPath}`);
 }
 
 const skillDestDir = join(homedir(), ".cursor", "skills", "holst");
-mkdirSync(skillDestDir, { recursive: true });
-const skillSrc = readFileSync(join(repoRoot, "skills", "holst", "SKILL.md"), "utf8");
-const skillOut = skillSrc.replaceAll("{{HOLST_CONNECTOR_ROOT}}", repoRoot);
-writeFileSync(join(skillDestDir, "SKILL.md"), skillOut, "utf8");
-console.log(`[5/5] Installed skill → ${join(skillDestDir, "SKILL.md")}`);
+const skillDest = join(skillDestDir, "SKILL.md");
+if (existsSync(skillDest)) {
+  console.log(`[5/5] Skill already exists, not overwriting: ${skillDest}`);
+} else {
+  mkdirSync(skillDestDir, { recursive: true });
+  const skillSrc = readFileSync(join(repoRoot, "skills", "holst", "SKILL.md"), "utf8");
+  const skillOut = skillSrc.replaceAll("{{HOLST_CONNECTOR_ROOT}}", repoRoot);
+  writeFileSync(skillDest, skillOut, "utf8");
+  console.log(`[5/5] Installed skill → ${skillDest}`);
+}
 
 const mcpEntry = {
   holst: {

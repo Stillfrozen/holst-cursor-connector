@@ -29,8 +29,8 @@ npm run holst:install -- --configure-mcp
 
 1. `npm install` + `npm run build`
 2. `npx playwright install chromium`
-3. Создаёт `~/.holst/boards.json` из `examples/boards.json` (если файла нет)
-4. Копирует skill → `~/.cursor/skills/holst/SKILL.md` (с абсолютным путём к репо)
+3. Создаёт `~/.holst/boards.json` с **плейсхолдер-UUID**, если файла ещё нет (боевые доски не копирует). Подставьте свой UUID из URL.
+4. Копирует skill → `~/.cursor/skills/holst/SKILL.md`, **только если** файла ещё нет (локальный overlay не затирает)
 5. Пишет `examples/mcp-snippet.json`
 6. С флагом `--configure-mcp` — добавляет сервер `holst` в `~/.cursor/mcp.json`
 
