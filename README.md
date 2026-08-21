@@ -44,7 +44,7 @@ npm run holst:login
 
 Перезагрузите MCP в Cursor (**Settings → MCP**).
 
-Подробная инструкция: **[docs/INSTALL.md](./docs/INSTALL.md)**.
+Подробная инструкция на русском: **[docs/INSTALL.md](./docs/INSTALL.md)**.
 
 ## MCP tools
 

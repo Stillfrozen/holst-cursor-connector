@@ -17,7 +17,7 @@ git clone https://github.com/Stillfrozen/holst-cursor-connector.git
 cd holst-cursor-connector
 ```
 
-Замените URL на ваш fork/org после публикации на GitHub.
+Это и есть русская пошаговая инструкция. README — короткий обзор.
 
 ## 2. Автоустановка (рекомендуется)
 
